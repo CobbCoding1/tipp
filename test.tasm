@@ -1,0 +1,4 @@
+@imp "test2.tasm"
+
+push N 
+print
