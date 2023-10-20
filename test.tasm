@@ -1,0 +1,4 @@
+@def N 10
+
+push N
+print
