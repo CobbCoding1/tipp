@@ -1,1 +1,4 @@
 @def N 100
+@def A 200
+print N
+push 15

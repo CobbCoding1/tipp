@@ -1,4 +1,6 @@
 @imp "test2.tasm"
 
-push N 
-print
+push N
+push A
+print print
+push 15

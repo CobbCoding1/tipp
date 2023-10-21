@@ -9,6 +9,8 @@
 const unsigned initial_size = 1;
 struct hashmap_s hashmap;
 
+char *pass(char *buffer, int length, int depth);
+
 char *read_file_to_buff(char *file_name, int *length){
     FILE *file = fopen(file_name, "r"); 
     if(file == NULL){
@@ -33,10 +35,10 @@ char *read_file_to_buff(char *file_name, int *length){
     return current;
 }
 
-char *get_word(char *buffer, int *index){
-    char *word = malloc(sizeof(char) * 4);
+char *get_word(char *buffer, int *index, int length){
+    char *word = malloc(sizeof(char));
     int word_size = 0;
-    while(isalpha(buffer[*index])){
+    while(isalpha(buffer[*index]) && *index < length){
         word[word_size] = buffer[*index];
         word_size++;
         *index += 1;
@@ -45,10 +47,22 @@ char *get_word(char *buffer, int *index){
     return word;
 } 
 
-char *get_value(char *buffer, int *index){
+char *get_filename(char *buffer, int *index, int length){
+    char *word = malloc(sizeof(char));
+    int word_size = 0;
+    while((isalpha(buffer[*index]) || buffer[*index] == '.' || isdigit(buffer[*index])) && *index < length){
+        word[word_size] = buffer[*index];
+        word_size++;
+        *index += 1;
+    }
+    word[word_size] = '\0';
+    return word;
+} 
+
+char *get_value(char *buffer, int *index, int length){
     char *value = malloc(sizeof(char) * 4);
     int value_size = 0;
-    while(buffer[*index] != '\n' && buffer[*index] != '\0'){
+    while(buffer[*index] != '\n' && *index < length){
         value[value_size] = buffer[*index];
         value_size++;
         *index += 1;
@@ -57,32 +71,70 @@ char *get_value(char *buffer, int *index){
     return value;
 } 
 
-void eof_error(char *buffer, int index){
-    if(buffer[index] == '\0' || buffer == NULL){
+void eof_error(char *buffer, int index, int length){
+    if(buffer[index] == '\0' || buffer == NULL || index > length){
         fprintf(stderr, "error: reached end of file\n");
         exit(1);
     }
 }
 
+char *prepro(char *file_name, int *length, int depth){
+    char *buffer = read_file_to_buff(file_name, length);
+    if(!buffer){
+        fprintf(stderr, "error reading file\n");
+        exit(1);
+    }
+    char *result = pass(buffer, *length, depth);
 
-void pass(char *buffer, int length){
+    return(result);
+}
+
+char *pass(char *buffer, int length, int depth){
+    if(depth > 500){
+        fprintf(stderr, "error: recursive import detected\n");
+        exit(1);
+    }
     int index = 0; 
-    char *output = malloc(sizeof(char) * 64);
+    char *output = malloc(sizeof(char) * 1024);
     int output_index = 0;
     while(index < length){
         if(buffer[index] == '@'){
             index++;
-            eof_error(buffer, index);
-            char *word = get_word(buffer, &index);
+            eof_error(buffer, index, length);
+            char *word = get_word(buffer, &index, length);
             if(strcmp(word, "def") == 0){
                 index++;
-                eof_error(buffer, index);
-                char *def = get_word(buffer, &index);
+                eof_error(buffer, index, length);
+                char *def = get_word(buffer, &index, length);
                 index++;
-                eof_error(buffer, index);
-                char *value = get_value(buffer, &index);
+                eof_error(buffer, index, length);
+                char *value = get_value(buffer, &index, length);
                 int put_error = hashmap_put(&hashmap, def, strlen(def), value);
                 assert(put_error == 0 && "COULD NOT PLACE INTO HASHMAP\n");
+            } else if(strcmp(word, "imp") == 0){
+                index++;
+                eof_error(buffer, index, length);
+                if(buffer[index] != '"'){
+                    fprintf(stderr, "error: expected close paren");
+                    exit(1);
+                }
+                index++;
+                eof_error(buffer, index, length);
+                char *imported_file = get_filename(buffer, &index, length);
+                eof_error(buffer, index, length);
+                if(buffer[index] != '"'){
+                    fprintf(stderr, "error: expected close paren");
+                    exit(1);
+                }
+                index++;
+                eof_error(buffer, index, length);
+                int imported_length = 0;
+                char *imported_buffer = prepro(imported_file, &imported_length, depth + 1);
+                imported_length = strlen(imported_buffer);
+                for(int i = 0; i < imported_length; i++){
+                    output[output_index] = imported_buffer[i];
+                    output_index++;
+                }
             } else {
                 fprintf(stderr, "Unexpected keyword: %s\n", word);
                 exit(1);
@@ -90,7 +142,7 @@ void pass(char *buffer, int length){
         } else if(isalpha(buffer[index])){
             // set a temp index because we dont want to iterate index here
             int temp_index = index;
-            char *word = get_word(buffer, &temp_index);
+            char *word = get_word(buffer, &temp_index, length);
             char* const element = hashmap_get(&hashmap, word, strlen(word));
             if(element){
                 // if found in hashmap, set the element value instead of word value
@@ -109,23 +161,19 @@ void pass(char *buffer, int length){
             }
         } 
 
-        output[output_index] = buffer[index];
-        output_index++;
+        output[output_index++] = buffer[index];
         index++;
     } 
+    //output_index--;
     output[output_index] = '\0';
-    printf("%s\n", output);
+    return(output);
 }
+
+
 
 int main(){
     int hashmap_error = hashmap_create(initial_size, &hashmap);
     assert(hashmap_error == 0 && "COULD NOT INITIALIZE HASHMAP\n");
     int length = 0;
-    char *buffer = read_file_to_buff("test.tasm", &length);
-    if(!buffer){
-        fprintf(stderr, "error reading file\n");
-        exit(1);
-    }
-
-    pass(buffer, length);
+    printf("%s\n", prepro("test.tasm", &length, 0));
 }
