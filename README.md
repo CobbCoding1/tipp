@@ -7,7 +7,6 @@ Current support:
 ## Definitions
 @def N 100
 
-Target support:
 ## Imports
 @imp "file_name.tasm"
 

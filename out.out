@@ -1,0 +1,9 @@
+
+
+print 100
+push 15
+
+push 100
+push 200
+print print
+push 15
