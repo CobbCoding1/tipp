@@ -1,3 +1,6 @@
+#ifndef TIPP_IMPLEMENTATION
+#define TIPP_IMPLEMENTATION
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,10 +9,36 @@
 
 #include "hashmap.h"
 
+char *read_file_to_buff(char *file_name, int *length);
+char *get_word(char *buffer, int *index, int length);
+char *get_filename(char *buffer, int *index, int length);
+char *get_value(char *buffer, int *index, int length);
+void eof_error(char *buffer, int index, int length);
+char *prepro(char *file_name, int *length, int depth);
+void append_to_output(char *output, int *output_index, char *value, int value_length);
+char *pass(char *buffer, int length, int depth, char *file_name);
+
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <assert.h>
+
+#include "hashmap.h"
+
+char *read_file_to_buff(char *file_name, int *length);
+char *get_word(char *buffer, int *index, int length);
+char *get_filename(char *buffer, int *index, int length);
+char *get_value(char *buffer, int *index, int length);
+void eof_error(char *buffer, int index, int length);
+char *prepro(char *file_name, int *length, int depth);
+void append_to_output(char *output, int *output_index, char *value, int value_length);
+char *pass(char *buffer, int length, int depth, char *file_name);
+
 const unsigned initial_size = 1;
 struct hashmap_s hashmap;
-
-char *pass(char *buffer, int length, int depth);
 
 char *read_file_to_buff(char *file_name, int *length){
     FILE *file = fopen(file_name, "r"); 
@@ -84,20 +113,31 @@ char *prepro(char *file_name, int *length, int depth){
         fprintf(stderr, "error reading file\n");
         exit(1);
     }
-    char *result = pass(buffer, *length, depth);
+    char *result = pass(buffer, *length, depth, file_name);
 
     return(result);
 }
 
-char *pass(char *buffer, int length, int depth){
+void append_to_output(char *output, int *output_index, char *value, int value_length){
+    for(int i = 0; i < value_length; i++){
+        output[*output_index] = value[i];
+        *output_index += 1;
+    }
+}
+
+char *pass(char *buffer, int length, int depth, char *file_name){
     if(depth > 500){
         fprintf(stderr, "error: recursive import detected\n");
         exit(1);
     }
     int index = 0; 
+    int line = 1;
     char *output = malloc(sizeof(char) * 1024);
     int output_index = 0;
     while(index < length){
+        if(buffer[index] == '\n'){
+            line++;
+        }
         if(buffer[index] == '@'){
             index++;
             eof_error(buffer, index, length);
@@ -131,10 +171,15 @@ char *pass(char *buffer, int length, int depth){
                 int imported_length = 0;
                 char *imported_buffer = prepro(imported_file, &imported_length, depth + 1);
                 imported_length = strlen(imported_buffer);
-                for(int i = 0; i < imported_length; i++){
-                    output[output_index] = imported_buffer[i];
-                    output_index++;
-                }
+                char *file_info = malloc(sizeof(char) * 64);
+                sprintf(file_info, "\n@\"%s\" %d", imported_file, 1);
+                append_to_output(output, &output_index, file_info, strlen(file_info));
+
+                append_to_output(output, &output_index, imported_buffer, imported_length);
+
+                sprintf(file_info, "\n@\"%s\" %d", file_name, line);
+
+                append_to_output(output, &output_index, file_info, strlen(file_info));
             } else {
                 fprintf(stderr, "Unexpected keyword: %s\n", word);
                 exit(1);
@@ -169,11 +214,3 @@ char *pass(char *buffer, int length, int depth){
     return(output);
 }
 
-
-
-int main(){
-    int hashmap_error = hashmap_create(initial_size, &hashmap);
-    assert(hashmap_error == 0 && "COULD NOT INITIALIZE HASHMAP\n");
-    int length = 0;
-    printf("%s\n", prepro("test.tasm", &length, 0));
-}

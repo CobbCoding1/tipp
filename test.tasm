@@ -1,3 +1,5 @@
+
+@imp "test2.tasm"
 @imp "test2.tasm"
 
 push N
