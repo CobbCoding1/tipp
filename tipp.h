@@ -108,6 +108,8 @@ void eof_error(char *buffer, int index, int length){
 }
 
 char *prepro(char *file_name, int *length, int depth){
+    int hashmap_error = hashmap_create(initial_size, &hashmap);
+    assert(hashmap_error == 0 && "COULD NOT INITIALIZE HASHMAP\n");
     char *buffer = read_file_to_buff(file_name, length);
     if(!buffer){
         fprintf(stderr, "error reading file\n");

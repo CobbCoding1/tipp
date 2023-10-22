@@ -7,8 +7,6 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     char *file_name = argv[1];
-    int hashmap_error = hashmap_create(initial_size, &hashmap);
-    assert(hashmap_error == 0 && "COULD NOT INITIALIZE HASHMAP\n");
     int length = 0;
     printf("%s\n", prepro(file_name, &length, 0));
 }
