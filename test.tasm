@@ -1,8 +1,0 @@
-
-@imp "test2.tasm"
-@imp "test2.tasm"
-
-push N
-push A
-print print
-push 15
