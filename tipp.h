@@ -77,7 +77,7 @@ char *get_word(char *buffer, int *index, int length){
 } 
 
 char *get_filename(char *buffer, int *index, int length){
-    char *word = malloc(sizeof(char));
+    char *word = malloc(sizeof(char) * 32);
     int word_size = 0;
     while((isalpha(buffer[*index]) || buffer[*index] == '.' || isdigit(buffer[*index])) && *index < length){
         word[word_size] = buffer[*index];
@@ -116,6 +116,7 @@ char *prepro(char *file_name, int *length, int depth){
         exit(1);
     }
     char *result = pass(buffer, *length, depth, file_name);
+    *length = strlen(result);
 
     return(result);
 }
@@ -174,12 +175,12 @@ char *pass(char *buffer, int length, int depth, char *file_name){
                 char *imported_buffer = prepro(imported_file, &imported_length, depth + 1);
                 imported_length = strlen(imported_buffer);
                 char *file_info = malloc(sizeof(char) * 64);
-                sprintf(file_info, "\n@\"%s\" %d", imported_file, 1);
+                sprintf(file_info, "\n@\"%s\" %d\n", imported_file, 1);
                 append_to_output(output, &output_index, file_info, strlen(file_info));
 
                 append_to_output(output, &output_index, imported_buffer, imported_length);
 
-                sprintf(file_info, "\n@\"%s\" %d", file_name, line);
+                sprintf(file_info, "\n@\"%s\" %d\n", file_name, line);
 
                 append_to_output(output, &output_index, file_info, strlen(file_info));
             } else {
