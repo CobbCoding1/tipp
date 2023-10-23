@@ -1,0 +1,5 @@
+@def X 50
+@imp "test"
+@imp "test2"
+
+push A N X
