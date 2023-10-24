@@ -156,6 +156,7 @@ char *pass(char *buffer, int length, int depth, char *file_name){
                 index++;
                 eof_error(buffer, index, length);
                 char *value = get_value(buffer, &index, length);
+                line++;
                 int put_error = hashmap_put(&hashmap, def, strlen(def), value);
                 assert(put_error == 0 && "COULD NOT PLACE INTO HASHMAP\n");
             } else if(strcmp(word, "imp") == 0){
@@ -179,13 +180,13 @@ char *pass(char *buffer, int length, int depth, char *file_name){
                 char *imported_buffer = prepro(imported_file, &imported_length, depth + 1);
                 imported_length = strlen(imported_buffer) - 1;
                 char *file_info = malloc(sizeof(char) * 64);
-                sprintf(file_info, "\n@\"%s\" %d\n", imported_file, 1);
+                sprintf(file_info, "\n@\"%s\" %d", imported_file, 1);
                 append_to_output(output, &output_index, file_info, strlen(file_info));
 
                 append_to_output(output, &output_index, imported_buffer, imported_length);
 
+                sprintf(file_info, "\n@\"%s\" %d", file_name, line);
                 line++;
-                sprintf(file_info, "\n@\"%s\" %d\n", file_name, line);
 
                 append_to_output(output, &output_index, file_info, strlen(file_info));
             } else {
