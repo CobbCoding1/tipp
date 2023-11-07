@@ -1,7 +1,3 @@
 // TODO LIST
 
-[x] Multiple imports don't work
-
-[x] Definitions before imports don't work
-
 [] There are issues with the line numbers being incorrect
