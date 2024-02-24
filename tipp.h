@@ -1,5 +1,5 @@
-#ifndef TIPP_IMPLEMENTATION
-#define TIPP_IMPLEMENTATION
+#ifndef TIPP_H
+#define TIPP_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +14,14 @@ char *get_word(char *buffer, int *index, int length);
 char *get_filename(char *buffer, int *index, int length);
 char *get_value(char *buffer, int *index, int length);
 void eof_error(char *buffer, int index, int length);
-char *prepro(char *file_name, int *length, int depth, char *output);
+char *prepro(char *file_name, int *length, int depth);
 void append_to_output(char *output, int *output_index, char *value, int value_length);
 char *pass(char *buffer, int length, int depth, char *file_name);
 
-#endif
+#endif // TIPP_H
+
+#ifdef TIPP_IMPLEMENTATION
+#define TIPP_IMPLEMENTATION
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +53,7 @@ char *read_file_to_buff(char *file_name, int *length){
 
     char *current = {0};
     fseek(file, 0, SEEK_END);
-    *length = ftell(file) - 1;
+    *length = ftell(file);
     fseek(file, 0, SEEK_SET);
 
     current = malloc((sizeof(char)) * (*length));
@@ -228,3 +231,4 @@ char *pass(char *buffer, int length, int depth, char *file_name){
     return(output);
 }
 
+#endif
